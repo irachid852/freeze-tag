@@ -100,7 +100,7 @@ def trouver(racine,seuil):
 rac = Noeud()
 x,T = ft.optimal_tree(0,[[0,0]]+rac.combinaison,ft.dist_L2)
 ft.draw_all('optimal',x,T)
-rep = trouver(rac,3)
+rep = trouver(rac,2.9)
 x,T = ft.optimal_tree(0,[[0,0]]+rep.combinaison,ft.dist_L2)
 ft.draw_all('optimal',x,T)
 
