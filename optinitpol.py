@@ -20,7 +20,8 @@ def ptposs(c):
     return ls
 
         
-lsv = ptposs(0.1)
+lsv = ptposs(0.05)
+lsv.remove([0,1])
 '''
 absi = [r*np.cos(a) for (a,r) in lsv]
 ordo = [r*np.sin(a) for (a,r) in lsv]
@@ -45,9 +46,12 @@ li = [[0.0, 1.0],
  [4.4870, 1.0],
  [5.3871, 1.0],
  [0.4636, 0.5590]]
-lir=[[randrange(0,int(2 / 0.1)+1)*0.1*np.pi,uniform(0.5,1)] for i in range(8)]
+lir=[[randrange(0,int(2 / 0.1)+1)*0.1*np.pi,1] for i in range(7)]
+lir=[[randrange(0,int(2 / 0.1)+1)*0.1*np.pi,0.45]]+[[randrange(0,int(2 / 0.1)+1)*0.1*np.pi,uniform(0.5, 0.8)] for i in range(6)]
+lio= [[0.0, 1], [0.785, 1], [1.571, 1], [2.356, 1],
+ [3.142, 1], [3.927, 1], [4.712, 1], [5.498, 1]]
 class Noeud:
-    def __init__(self,combinaison=lir,fils=None,parent=None):
+    def __init__(self,combinaison=lio,fils=None,parent=None):
         self.combinaison = combinaison
         self.fils = [] if fils is None else fils
         self.maxi , _ =  ft.optimal_tree(0,[[0,0]]+pol2car(self.combinaison),ft.dist_L2)
@@ -56,7 +60,7 @@ class Noeud:
     def suivant(self,ind):
         for i in lsv:
             if 1==1 and \
-               (i not in [[0,0]]+self.combinaison) and \
+               ([round(i[0],3),round(i[1],3)] not in [[round(j[0],3),round(j[1],3)] for j in [[0,0],[1,0]]+self.combinaison]) and \
                ((abs(i[1]-self.combinaison[ind][1])<0.1*np.pi+1e-5 and (i[0]-self.combinaison[ind][0])==0)) or (abs(i[1]-self.combinaison[ind][1])==0 and abs(i[0]-self.combinaison[ind][0]) <0.1*np.pi+1e-5):
 
                 config = frozenset(map(tuple, self.combinaison[:ind] + [i] + self.combinaison[(ind+1):]))
@@ -66,6 +70,80 @@ class Noeud:
                     lsd.add(config)
                     if self.maxi < x:
                         self.fils.append(Noeud(self.combinaison[:ind]+[i]+self.combinaison[(ind+1):], parent=self))
+    def suivant(self, ind):
+        for i in lsv:
+            if [round(i[0], 3), round(i[1], 3)] not in [[round(j[0], 3), round(j[1], 3)] for j in [[0, 0], [1, 0]] + self.combinaison]:
+    
+                a0, r0 = self.combinaison[ind]
+                a1, r1 = i
+                delta_a = abs(a1 - a0)
+                delta_r = abs(r1 - r0)
+    
+                if (ind == 0 and delta_r < 1e-10 and delta_a < 0.1*np.pi + 1e-5) or \
+                   (ind != 0 and ((delta_r < 0.1 + 1e-5 and delta_a < 1e-5) or (delta_a < 0.1*np.pi + 1e-5 and delta_r < 1e-5))):
+    
+                    config = frozenset(map(tuple, self.combinaison[:ind] + [i] + self.combinaison[ind+1:]))
+                    if config not in lsd:
+                        ls = [[0, 0]] + pol2car(self.combinaison[:ind] + [i] + self.combinaison[ind+1:])
+                        x, _ = ft.optimal_tree(0, ls, ft.dist_L2)
+                        lsd.add(config)
+                        if self.maxi < x:
+                            self.fils.append(Noeud(self.combinaison[:ind] + [i] + self.combinaison[ind+1:], parent=self))
+
+    def suivant(self, ind):
+        points_existants = set((round(p[0], 3), round(p[1], 3)) for p in [[0, 0], [1, 0]] + self.combinaison)
+    
+        for i in lsv:
+            p_arrondi = (round(i[0], 3), round(i[1], 3))
+            if p_arrondi not in points_existants:
+                a0, r0 = self.combinaison[ind]
+                a1, r1 = i
+                delta_a = abs(a1 - a0)
+                delta_r = abs(r1 - r0)
+    
+                if (ind == 0 and delta_r < 1e-10 and delta_a < 0.1 * np.pi + 1e-5) or \
+                   (ind != 0 and ((delta_r < 0.1 + 1e-5 and delta_a < 1e-5) or 
+                                 (delta_a < 0.1 * np.pi + 1e-5 and delta_r < 1e-5))):
+    
+                    nouvelle_combinaison = self.combinaison[:ind] + [i] + self.combinaison[ind + 1:]
+                    config = frozenset(map(tuple, nouvelle_combinaison))
+    
+                    if config not in lsd:
+                        ls = [[0, 0]] + pol2car(nouvelle_combinaison)
+                        x, _ = ft.optimal_tree(0, ls, ft.dist_L2)
+                        lsd.add(config)
+    
+                        if 1==1:#self.maxi < x:
+                            self.fils.append(Noeud(nouvelle_combinaison, parent=self))
+                            points_existants.add(p_arrondi)  # On enregistre le point comme utilisé
+    
+    def suivant(self, ind):
+        points_existants = set((round(p[0], 3), round(p[1], 3)) for p in [[0, 0], [1, 0]] + self.combinaison)
+    
+        for i in lsv:
+            p_arrondi = (round(i[0], 3), round(i[1], 3))
+            if p_arrondi not in points_existants:
+                a0, r0 = self.combinaison[ind]
+                a1, r1 = i
+                delta_a = abs(a1 - a0)
+                delta_r = abs(r1 - r0)
+    
+                if (ind == 20 and delta_r < 1e-10 and delta_a < 0.1 * np.pi + 1e-5) or \
+                   (ind != 20 and ((delta_r < 0.1 + 1e-5 and delta_a < 1e-5) or 
+                                 (delta_a < 0.1 * np.pi + 1e-5 and delta_r < 1e-5))):
+    
+                    nouvelle_combinaison = self.combinaison[:ind] + [i] + self.combinaison[ind + 1:]
+                    config = frozenset(map(tuple, nouvelle_combinaison))
+    
+                    if config not in lsd:
+                        ls = [[0, 0]] + pol2car(nouvelle_combinaison)
+                        x, _ = ft.optimal_tree(0, ls, ft.dist_L2)
+                        lsd.add(config)
+    
+                        if 1==1:#self.maxi < x:
+                            self.fils.append(Noeud(nouvelle_combinaison, parent=self))
+                            points_existants.add(p_arrondi)  # On enregistre le point comme utilisé
+
 
     def cons(self):
         for ind in range(len(self.combinaison)):
@@ -151,7 +229,7 @@ rac = Noeud()
 x, T = ft.optimal_tree(0, [[0,0]]+pol2car(rac.combinaison), ft.dist_L2)
 ft.draw_all('optimal', x, T)
 
-rep = trouver(rac, 3.48)
+rep = trouver(rac, 3.7)
 x, T = ft.optimal_tree(0, [[0,0]]+pol2car(rep.combinaison), ft.dist_L2)
 ft.draw_all('optimal', x, T)
 
@@ -161,11 +239,22 @@ while noeudac:
     evolution.append([[0,0]] + pol2car(noeudac.combinaison))
     noeudac = noeudac.parent
 evolution.reverse()
-
+'''
 image_files = []
 for idx, evo in enumerate(evolution):
     x, T = ft.optimal_tree(0, evo, ft.dist_L2)
     plt.clf()
     ft.draw_all('optimal', x, T, save=str(idx)+'.png')
+    plt.close('all')
+    gc.collect()
+'''
+for idx, evo in enumerate(evolution):
+    plt.clf()
+    plt.axis('equal')
+    ft.draw_disc()
+    ft.draw_points(evo,'green')
+    plt.savefig(f'{idx}.png')
+    
+    plt.show()
     plt.close('all')
     gc.collect()
