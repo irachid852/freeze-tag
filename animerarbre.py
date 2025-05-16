@@ -68,77 +68,43 @@ class Noeud:
         return False
                 
 
-def simulation_robots(arbre):
-    """
-    Simule le parcours des robots dans un arbre représenté sous forme de liste imbriquée.
-    
-    Dans cette simulation:
-    - Chaque nœud est un point à visiter
-    - Un robot part de la racine et réveille d'autres robots en chemin
-    - Pour chaque sous-arbre, un nouveau robot est réveillé et commence à ce nœud
-    
-    Args:
-        arbre: Structure arborescente représentée comme [racine, [sous-arbre1], [sous-arbre2], ...]
-        
-    Returns:
-        Un dictionnaire où les clés sont les identifiants des robots 
-        et les valeurs sont les listes ordonnées des sommets à visiter
-    """
+from collections import deque
+
+def obtenir_chemins_robots(arbre):
+    from collections import deque
+    file = deque()
     chemins_robots = {}
-    
-    def explorer(noeud, robot_actif=None):
-        """
-        Explore un sous-arbre en simulant les mouvements d'un robot.
-        
-        Args:
-            noeud: Sous-arbre à explorer
-            robot_actif: Identifiant du robot qui explore ce sous-arbre
-        """
-        if not isinstance(noeud, list) or len(noeud) == 0:
-            return
-        
-        noeud_id = noeud[0]
-        
-        # Si c'est le premier appel, le robot actif est celui de la racine
-        if robot_actif is None:
-            robot_actif = noeud_id
-        
-        # Initialiser le chemin pour ce robot s'il n'existe pas
-        if robot_actif not in chemins_robots:
-            chemins_robots[robot_actif] = []
-        
-        # Le robot actif visite ce nœud
-        if noeud_id != robot_actif:  # Éviter qu'un robot se "visite" lui-même au démarrage
-            chemins_robots[robot_actif].append(noeud_id)
-        
-        # Traiter les sous-arbres
-        for sous_arbre in noeud[1:]:
-            if isinstance(sous_arbre, list) and len(sous_arbre) > 0:
-                # Le robot actif "réveille" un nouveau robot au nœud racine du sous-arbre
-                nouveau_robot = sous_arbre[0]
-                
-                # Le nouveau robot commence à explorer son sous-arbre
-                explorer(sous_arbre, nouveau_robot)
-    
-    # Commencer l'exploration depuis la racine
-    explorer(arbre)
-    
-    # Reconstruire l'exemple spécifique décrit
-    if isinstance(arbre, list) and len(arbre) > 0 and arbre[0] == 0:
-        # Vérifier si c'est bien l'exemple [0, [2, [1, [8, [7]], [6]], [4, [3], [5]]]]
-        # si oui, on applique la séquence exacte décrite dans l'énoncé
-        if (len(arbre) > 1 and isinstance(arbre[1], list) and len(arbre[1]) > 0 and arbre[1][0] == 2 and
-            len(arbre[1]) > 1 and isinstance(arbre[1][1], list) and len(arbre[1][1]) > 0 and arbre[1][1][0] == 1):
-            
-            # Réinitialiser les chemins pour correspondre exactement à l'exemple
-            chemins_robots = {
-                0: [2, 1, 8, 7],  # Robot 0 visite: 2, 1, 8, 7
-                2: [4, 3],        # Robot 2 visite: 4, 3
-                1: [6],           # Robot 1 visite: 6
-                4: [5]            # Robot 4 visite: 5
-            }
-    
+
+    if not arbre:
+        return chemins_robots
+
+    racine_valeur = arbre[0]
+    file.append((0, [], arbre))  # (id_robot, chemin_courant, sous_arbre)
+
+    while file:
+        id_robot, chemin_courant, sous_arbre = file.popleft()
+        valeur_courante = sous_arbre[0]
+        nouveau_chemin = chemin_courant + [valeur_courante]
+
+        enfants = sous_arbre[1:]
+
+        if enfants:
+            premier_enfant = enfants[0]
+            file.append((id_robot, nouveau_chemin, premier_enfant))
+
+            for enfant in enfants[1:]:
+                nouveau_id_robot = valeur_courante
+                nouveau_chemin_robot = [valeur_courante]
+                file.append((nouveau_id_robot, nouveau_chemin_robot, enfant))
+        else:
+            if id_robot in chemins_robots:
+                chemin_existant = chemins_robots[id_robot]
+                chemin_existant.extend(nouveau_chemin[len(chemin_existant):])
+            else:
+                chemins_robots[id_robot] = nouveau_chemin
+
     return chemins_robots
+
 
 # Exemple :
 '''arbre = [0, [3, [4, [5, [6]], [7]], [1, [2], [8]]]]
@@ -146,7 +112,7 @@ print(enfants_par_robot(arbre))'''
 
 def etape(P,v):
     x, T = ft.optimal_tree(0,P,ft.dist_L2)
-    arbre_chemin= simulation_robots(T)
+    arbre_chemin= obtenir_chemins_robots(T)
     dic = {}
     print(arbre_chemin)
     ls = [False for i in range(9)]
@@ -178,10 +144,11 @@ import io
 
 def etape(P, v, gifname='freeze_tag.gif'):
     x, T = ft.optimal_tree(0, P, ft.dist_L2)
-    arbre_chemin = simulation_robots(T)
-    print(arbre_chemin)
+    ft.draw_all('optimal', x, T)
+    arbre_chemin = obtenir_chemins_robots(T)
+   
     dic = {}
-    print(arbre_chemin)
+    
     ls = [False] * len(P)
     for i, el in enumerate(P):
         dic[f'Robot {i}'] = Noeud(el, None, False)
@@ -200,7 +167,9 @@ def etape(P, v, gifname='freeze_tag.gif'):
         fig, ax = plt.subplots()
         ax.set_aspect('equal')
         ft.draw_disc()
-        ft.draw_points(lst, 'red', 10)
+        dicc= {True:'green', False:'red'}
+        for r in dic.keys():
+            plt.plot([dic[r].coord[0]], [dic[r].coord[1]],color = dicc[dic[r].reveil] , marker = 'o', ms = 7, ls = 'none')
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
         buf.seek(0)
@@ -210,28 +179,22 @@ def etape(P, v, gifname='freeze_tag.gif'):
     frames[0].save(gifname, save_all=True, append_images=frames[1:], duration=100, loop=0)
     print(f"GIF enregistré : {gifname}")
 
-
-
-etape(octo,0.1,'freeze_tag.gif')
+def pol2car(ls):
+    lsc = []
+    for (a,r) in ls:
+        lsc.append([r*np.cos(a),r*np.sin(a)])
+    return lsc
+la = [[0,0]]+pol2car([[ uniform(0,2*np.pi),uniform(0.5,1)] for i in range(12)])
+etape(octo,0.05,'freeze_tag.gif')
             
-    
-'''T = [0, [2, [1, [8, [7]], [6]], [4, [3], [5]]]]
-print(enfants_par_robot(T))'''
-    
-    
-    
 
 
-# Exemple d'utilisation
-exemple_arbre = [0, [2, [1, [8, [7]], [6]], [4, [3], [5]]]]
-chemins_robots = simulation_robots(exemple_arbre)
 
-print("Chemins des robots pour l'exemple [0, [2, [1, [8, [7]], [6]], [4, [3], [5]]]]:")
-for robot, chemin in sorted(chemins_robots.items()):
-    print(f"Robot {robot}: {' → '.join(map(str, chemin))}")
 
-    
-    
+# Lecture et analyse de l'entrée
+
+
+
     
     
     
