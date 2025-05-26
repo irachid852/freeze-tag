@@ -4,3 +4,5 @@ lancer le init.py, pour la valeur seuil ne pas mettre une valeur trop grande car
 lancer le optinit.py pour l'approche max global avec une optimisation de la memoire. Plus lent mais peut tourner infiniment sans probleme de memoire
 lancer le optinitpol.py pour l'apporche max global en polaire
 lancer animerarbre.py pour l'animation des robots se deplacent dans l'arbre optimal 
+lancer algo1f.py pour la simulation de l'algorithme avec les cones et domes
+lancer algo2.py pour la simulation de l'algorithme avec les couronnes
