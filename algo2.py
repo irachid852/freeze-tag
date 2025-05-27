@@ -49,7 +49,7 @@ class Robot:
     def aller(self,coord):
         self.suivant.append(coord)
 r1 = Robot([0,0],False)
-lsr = [Robot([0,0],True)] + [Robot([rd.uniform(0,2*np.pi), np.sqrt(rd.uniform(0,1))], False) for i in range(500)] + [r1]
+lsr = [Robot([0,0],True)] + [Robot([rd.uniform(0,2*np.pi), np.sqrt(rd.uniform(0.2,1))], False) for i in range(500)] 
 
 mini = np.Inf 
 minval = None
@@ -63,31 +63,45 @@ for e in lsr:
         elif dist<mini2:
             mini2 = dist
             minval2 = e
-    
- 
-lsr[0].aller(minval)
-minval.reveil = True
-lsr[0].aller(r1)
-minval.aller(r1)
-minval.aller(minval2)
-minval2.reveil = True
-
-
 dic = {'couronne 1': [], 'couronne 2': [], 'couronne 3': []}
-
+aa.ft.draw_disc()
+dicc = {'couronne 1': "ro", 'couronne 2': "bo", 'couronne 3': "go"}
 for e in lsr:
     t, r = e.coord
     t = t % (2*np.pi)  # Normaliser l'angle entre 0 et 2π
     
-    if 0 <= t < 2*np.pi/3:
+    if 0 <= (t-minval2.coord[0])%(2*np.pi) < 2*np.pi/3:
         dic['couronne 1'].append(e)
         e.groupe = 'couronne 1'
-    elif 2*np.pi/3 <= t < 4*np.pi/3:
+    elif 2*np.pi/3 <= (t-minval2.coord[0])%(2*np.pi) < 4*np.pi/3:
         dic['couronne 2'].append(e)
         e.groupe = 'couronne 2'
     else:
         dic['couronne 3'].append(e)
         e.groupe = 'couronne 3'
+
+
+for r in lsr:
+    x,y = pol2car(r.coord)
+    if r not in [lsr[0],minval,minval2]:
+        
+        plt.plot(x,y,dicc[r.groupe])
+    else:
+        plt.plot(x,y,"mo")
+plt.show()
+l = minval2.coord[0]
+for r in lsr:
+    r.coord[0] = (r.coord[0]-l)%(2*np.pi)
+lsr[0].aller(minval)
+minval.reveil = True
+#lsr[0].aller(r1)
+#minval.aller(r1)
+minval.aller(minval2)
+minval2.reveil = True
+
+
+
+
 aa.ft.draw_disc()
 dicc = {'couronne 1': "ro", 'couronne 2': "bo", 'couronne 3': "go"}
 for r in lsr:
@@ -166,11 +180,29 @@ def recherche_couronne(d,couronne,nom):
             if mincour in couronne : couronne.remove(mincour)
             file.enfiler(mincour)
             
-def recherche_couronne(d, couronne, nom):
+def recherche_couronne(lsd, couronne, nom):
+    angleinf = ((int(nom[-1])-1)*2*np.pi/3)%(2*np.pi)
+    anglesup = ((int(nom[-1]))*2*np.pi/3)%(2*np.pi)
+    mind = np.Inf
+    valmind = None
+    for eld in lsd:
+        if eld== lsr[0] :
+            t = minval.coord[0]
+        elif eld == minval: t = minval2.coord[0]
+        else: t = eld.coord[0]
+        k = [abs(t-angleinf),abs(t-anglesup)]
+        print(k)
+        m = min(k)
+        vk = [k.index(m),eld]
+        if m<mind:
+            mind = m
+            valmind = vk
+    print(valmind[0])
+    d = valmind[1]
     file = File()
     file.enfiler(d)
     # Initialisation correcte des bornes (exemple avec 0 et 1)
-    d.borne_rayon_inf = 0
+    d.borne_rayon_inf = minval2.coord[1]
     d.borne_rayon_sup = 1
     if d in couronne:
         couronne.remove(d)
@@ -183,9 +215,9 @@ def recherche_couronne(d, couronne, nom):
         min_diff = np.Inf
         # Recherche du nœud le plus proche du milieu
         for e in couronne:
-            r = e.coord[1]  # Supposons que coord[1] est le rayon
-            diff = abs(r - milieu)
-            if diff < min_diff and r!=0 and e.coord not in [minval.coord,minval2.coord] :
+            t = e.coord[0]  # Supposons que coord[1] est le rayon
+            diff = abs(t-(angleinf+valmind[0]*2*np.pi/3))
+            if diff < min_diff and r!=0 and e.coord not in [minval.coord,minval2.coord] and e!=r1:
                 min_diff = diff
                 mincour = e
         if mincour:
@@ -198,6 +230,7 @@ def recherche_couronne(d, couronne, nom):
             couronne.remove(mincour)
             file.enfiler(mincour)
             file.enfiler(elt)  # Conserver le parent pour l'autre moitié
+    return d
 '''  
 def recherche_couronne(d, couronne, nom):
     file = File()
@@ -271,11 +304,16 @@ recherche_couronne_binaire(minval, dic['couronne 1'], 0, 2*np.pi/3, minval2.coor
 recherche_couronne_binaire(minval2, dic['couronne 2'],  2*np.pi/3, 4*np.pi/3, minval2.coord[1], 1)
 recherche_couronne_binaire(lsr[0], dic['couronne 3'],  4*np.pi/3, 6*np.pi/3, minval2.coord[1], 1)
 '''
+lsd = [minval,minval2,lsr[0]]
+print("liste ", [pol2car(r.coord) for r in lsd])
+v = recherche_couronne(lsd,dic['couronne 1'],'couronne 1')
+print("couronne 1",pol2car(v.coord))
 
-recherche_couronne(minval,dic['couronne 1'],'couronne 1')
-recherche_couronne(minval2,dic['couronne 2'],'couronne 2')
-recherche_couronne(lsr[0],dic['couronne 3'],'couronne 3')
-
+lsd.remove(v)
+k = recherche_couronne(lsd,dic['couronne 2'],'couronne 2')
+print("couronne 2",pol2car(k.coord))
+lsd.remove(k)
+print("couronne 3",pol2car(recherche_couronne(lsd,dic['couronne 3'],'couronne 3').coord))
 lst = [i for i in lsr if i.reveil == True and i.groupe == 'couronne 1']
 lsv = [i for i in lsr if i.groupe == 'couronne 1'] 
 print(f"{len(lst)}/{len(lsv)}")
@@ -327,7 +365,7 @@ def etape(lsr, v, gifname='freeze_tag.gif'):
 
 
 #la = [[0,0]]+pol2car([[ uniform(0,2*np.pi),uniform(0.5,1)] for i in range(12)])
-etape(lsr,0.05,'freeze_tag.gif')
+etape(lsr,0.045,'freeze_tag.gif')
 
 
 
