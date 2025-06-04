@@ -298,7 +298,6 @@ for idx, evo in enumerate(evolution):
     gc.collect()
     
 frames[0].save("pire.gif", save_all=True, append_images=frames[1:], duration=1000, loop=0)
-
 while True:
     try:
         reponse = input(f"quelle image souhaitez vous visualiser et avec ou sans arbre sur {len(evolution)} images (ex : 12/0 donne image 12 avec arbres, on commence a 1) : ")
