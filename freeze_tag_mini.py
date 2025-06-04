@@ -420,7 +420,7 @@ def draw_tree(T, P=None, c_edge='blue', w=0.005, arc=False, pts=True, c_pts='red
         lss, col = (':','orange') if T[0] == ROOT else ('-',c) # dash line for the first edge
         plt.arrow(r[0], r[1], f[0]-r[0], f[1]-r[1], color = col, width = w, head_width = hw, head_length = hl, length_includes_head = True, ls = lss, overhang = .2)
 
-def draw_all(title=None, x=None, T=None, P=None, d=None, save=None, xaxis=[], yaxis=[], disc=True):
+def draw_all(title=None, x=None, T=None, P=None, d=None, save=None, xaxis=[], yaxis=[], disc=True,vis =False):
     """
     Draw and display a time solution x with its rooted tree T on a set of points P, title being just a comment for the legend. It also calculates and displays the depth of T according to the distance function d(). A simple call to draw_all(), with no arguments, displays the points of POINTS, its eccentricity and its diameter. Setting ROOT=None prevents the root from being distinguished from the other points. To avoid displaying the 'time' line, set PROCESS_TIME = 0. To avoid displaying the 'seed' line, set SEED = -1. Warning! PROCESS_TIME is reset to zero by this function. A unit disc (w.r.t. d() function) is displayed iff *disc* is True.
 
@@ -473,10 +473,10 @@ def draw_all(title=None, x=None, T=None, P=None, d=None, save=None, xaxis=[], ya
     # save the figure in current directory
     if save != None:
         file = os.getcwd() + '/' + save
-        plt.savefig(file, format='svg', dpi=1200) # to put before plt.show()
+        plt.savefig(file, format='png', dpi=1200) # to put before plt.show()
         print(f"File {file} saved.")
 
-    plt.show() # show drawing
+    if vis == True :plt.show() # show drawing
 
 
 #####################################################
